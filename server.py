@@ -116,16 +116,8 @@ async def serve(websocket, path):
                     websocket.custom_fields.add('name')
                     await notify_users()
                 elif data['type'] == "status":
-                    websocket.custom_fields.add('status')
-                    websocket.status = data['status']
-
-                    if isinstance(data['queue'], (list, dict)):
-                        websocket.custom_fields.add('queue')
-                        websocket.queue = data['queue']
-
-                    if isinstance(data['current'], (list, dict)):
-                        websocket.custom_fields.add('current')
-                        websocket.current = data['current']
+                    websocket.raw_status = message
+                    websocket.custom_fields.add('raw_status')
                     await notify_users()
 
                 if data['type'] == "command":
@@ -133,7 +125,7 @@ async def serve(websocket, path):
                         return
                     user = await get_user(data['uuid'])
                     if user:
-                        Logger.info("Sending to %s %s", user['name'], message)
+                        Logger.info("Sending to %s %s", user.name, message)
                         await user.send(message)
                     else:
                         Logger.info("User not found by uuid %s", data['uuid'])
