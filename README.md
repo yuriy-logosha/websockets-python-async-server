@@ -1,8 +1,8 @@
 # Websockets-python-async-server
 Server on websockets for **Python3**. It's collecting all connections into set with several custom attributes: uuid, name, status, etc.
 
-#Features
-Notify users if new user have came/left or status has changed.
+# Features
+Notify users if new user have registered/unregistered or status has changed.
 
 # Defaults
 - Server accessible outside. Add attribute host=localhost to override and make it accessible only locally.
