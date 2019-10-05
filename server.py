@@ -118,7 +118,8 @@ async def serve(websocket, path):
                 elif data['type'] == "status":
                     websocket.raw_status = message
                     websocket.custom_fields.add('raw_status')
-                    await notify_users()
+                    user = await get_user(data['uuid'])
+                    await websocket.send(user_to_json(user))
 
                 if data['type'] == "command":
                     if not data['uuid']:
