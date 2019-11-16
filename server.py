@@ -9,6 +9,16 @@ import socket
 import sys
 import datetime as dt
 
+
+def myip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
+
+
 USERS = set()
 default_port = 1300
 params = {}
@@ -43,15 +53,6 @@ file_handler.setFormatter(formatter)
 
 Logger.addHandler(file_handler)
 Logger.addHandler(console)
-
-
-def myip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    finally:
-        s.close()
 
 
 def user_to_json(user):
