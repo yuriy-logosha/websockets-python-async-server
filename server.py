@@ -12,7 +12,7 @@ import datetime as dt
 USERS = set()
 default_port = 1300
 params = {}
-params.update({'remote': socket.gethostbyname(socket.gethostname())})
+params.update({'remote': myip()})
 
 if sys.argv:
     for idx in range(1, sys.argv.__len__()):
@@ -43,6 +43,15 @@ file_handler.setFormatter(formatter)
 
 Logger.addHandler(file_handler)
 Logger.addHandler(console)
+
+
+def myip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
 
 
 def user_to_json(user):
