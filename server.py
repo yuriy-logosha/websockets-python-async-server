@@ -119,17 +119,16 @@ async def serve(websocket, path):
                     websocket.raw_status = message
                     websocket.custom_fields.add('raw_status')
                     await notify_users()
-
-                if data['type'] == "command":
+                elif data['type'] == "command":
                     if not data['uuid']:
                         return
                     user = await get_user(data['uuid'])
-                    if user:
-                        Logger.info("Sending to %s %s", user.name, message)
-                        await user.send(message)
-                    else:
+                    if not user:
                         Logger.info("User not found by uuid %s", data['uuid'])
                         await websocket.send("User not found by uuid " + data['uuid'])
+                        return
+                    Logger.info("Sending to %s %s", user.name, message)
+                    await user.send(message)
             except Exception as pex:
                 Logger.error("Parsing Exception", pex)
 
