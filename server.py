@@ -97,6 +97,7 @@ async def register(user):
     user.uuid = str(uuid.uuid1())
     user.service_port = default_port + 1 + len(USERS)
     user.custom_fields = set()
+    user.results = []
     USERS.add(user)
     Logger.info("Register: %s", user.uuid)
     msg = json.dumps({'type': 'settings', 'uuid': user.uuid, 'port': user.service_port})
@@ -114,6 +115,15 @@ def parse(message):
     return json.loads(message)
 
 
+def get_result(results, _id):
+    for r in results:
+        if r["id"] == _id:
+            return r
+    return None
+
+def build_container(type, value):
+    return {'type': type, type: value}
+
 async def serve(websocket, path):
     try:
         await register(websocket)
@@ -126,19 +136,41 @@ async def serve(websocket, path):
                     websocket.custom_fields.add('name')
                     await notify_users()
                 elif data['type'] == "status":
-                    websocket.raw_status = message
-                    websocket.custom_fields.add('raw_status')
-                    await notify_users()
-                elif data['type'] == "command":
-                    if not data['uuid']:
-                        return
-                    user = await get_user(data['uuid'])
+                    r = get_result(websocket.results, data["id"])
+                    if r:
+                        r['result'] = data['status']
+                        r['status'] = 'DONE'
+                        user = await get_user(r['to'])
+                        await user.send(json.dumps(build_container('status-container', r)))
+                elif data['type'] == "result" and data['id']:
+                    r = get_result(websocket.results, data["id"])
+                    if r:
+                        r['result'] = data['result']
+                        r['status'] = data['status']
+                        if data['status'] is 'DONE':
+                            websocket.results.remove(r)
+                        user = await get_user(r['to'])
+                        await user.send(json.dumps(build_container('result-container', r)))
+                    
+                elif data['type'] == "command" and data['to'] and data['id']:
+                    user = await get_user(data['to'])
                     if not user:
-                        Logger.info("User not found by uuid %s", data['uuid'])
-                        await websocket.send("User not found by uuid " + data['uuid'])
-                        return
-                    Logger.info("Sending to %s %s", user.name, message)
-                    await user.send(message)
+                        Logger.info("User not found by uuid %s", data['to'])
+                        await websocket.send("User not found by uuid " + data['to'])
+                    else:
+                        result = {
+                            'type': 'result',
+                            'id': data['id'],
+                            'status': 'SENDING',
+                            'to': websocket.uuid,
+                            'from': data['to'],
+                            'result': ''}
+                        
+                        user.results.append(result)
+    
+                        Logger.info("Sending to %s %s", user.name, data)
+                        await user.send(json.dumps(data))
+                        await websocket.send(json.dumps(build_container('result-container', result)))
             except Exception as pex:
                 Logger.error("Parsing Exception", pex)
 
